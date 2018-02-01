@@ -9,5 +9,5 @@ setup(
   url = 'https://github.com/Mansilla1/potato', # use the URL to the github repo
   download_url = 'https://github.com/Mansilla1/potato/tarball/0.1',
   keywords = ['testing', 'logging', 'example'],
-  classifiers = [],
+  # classifiers = [],
 )
