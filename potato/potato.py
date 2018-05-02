@@ -55,7 +55,6 @@ profile_firefox.set_preference("dom.max_script_run_time", 60)
 
 # -- configuración Chrome --
 
-# -- configuración Chrome --
 
 # obtener OS 
 def separator():
@@ -89,7 +88,7 @@ def find_elements(text):
         valores = driver.find_elements_by_css_selector('[value="%s"]' %text)
         if len(valores) == 0:
             valores = driver.find_elements_by_css_selector('[type="%s"]' %text)
-    return valor 
+    return valores 
 
 # método para generar evidencias
 def directorio_evidencia():
@@ -115,20 +114,39 @@ def carga_archivo(dir, archivo):
     return archivos_necesarios(dir) + archivo
 
 # set preferences (ultimate)
+global evidencia # variable global
 evidencia = evidencia_actual()
 # evidencia_actual().replace('\\', '/')
 profile_firefox.set_preference("browser.download.dir", evidencia)
 profile_firefox.set_preference("browser.download.downloadDir", evidencia)
 profile_firefox.set_preference("browser.download.defaultFolder", evidencia)
-def open_browser(browser = 'firefox'):
+profile_firefox.accept_untrusted_certs = True
+
+'''Parametros de entrada:
+- browser: navegador a levantar (se permite firefox y chrome); valor por defecto = 'firefox'
+- driver_path: path en donde se encuentra en driver
+- headless: indica si se requiere ejecutar el navegador en formato headless (booleano)
+'''
+def open_browser(browser = 'firefox', **data_extra):
+    data_key = []
+    for key in data_extra.keys():
+        data_key.append(key)
     global driver
     browser = browser.lower()
     if browser == 'firefox':
-        driver = webdriver.Firefox(firefox_profile=profile_firefox) # abrir FIREFOX, el geckodriver se encuentra en el path ('..\..\Scripts\geckodriver.exe')
+        from selenium.webdriver.firefox.options import Options # firefox options
+        firefox_options = Options()
+        firefox_options.set_headless(data_extra['headless'])
+        if 'driver_path' in data_key:
+            driver = webdriver.Firefox(firefox_profile=profile_firefox, firefox_options=firefox_options, executable_path=data_extra['driver_path'])
+        else:
+            driver = webdriver.Firefox(firefox_profile=profile_firefox, firefox_options=firefox_options)
     elif browser == 'chrome':
-        driver = webdriver.Chrome()
-    elif browser == 'phantomjs':
-        driver = webdriver.PhantomJS()
+        from selenium.webdriver.chrome.options import Options # chrome options
+        if 'driver_path' in data_key:
+            driver = webdriver.Firefox(executable_path=data_extra['driver_path'])
+        else:
+            driver = webdriver.Chrome()
     # driver.set_page_load_timeout(60)
     return driver
         
@@ -150,7 +168,7 @@ def scroll_page(cantidad):
 # -- Fin cabeceras -- 
 
 # login dnp
-def login(user, name_file='potato/archivos/users.csv'):
+def login(user, name_file='potato/archivos/credenciales.csv'):
     result = {}
     with open(name_file, 'r') as fopen:
         reader = csv.reader(fopen, delimiter=";")
@@ -176,13 +194,6 @@ def generic_login(**kwargs):
         filtro.send_keys(value)
     return find_text('submit').click()
 
-def logout(servicio = 'ui'):
-    time.sleep(3)
-    if servicio == 'ui':
-        return driver.find_element_by_css_selector('a[href="/SEGRD_UI/user/logout"]').click()
-    else:
-        return driver.find_element_by_css_selector('a[href="/BackOffice/user/logout"]').click()
-
 def close():
     return driver.close()
 
@@ -192,27 +203,10 @@ def filtro_ingreso(**kwargs):
         filtro = driver.find_element_by_name(key) # name porque son inputs de un formulario
         filtro.clear()
         filtro.send_keys(value)
-    return find_text('submit').click() # click en submit
 
 # método para buscar y ejecutar filtros selectbox, el tipo_filtro es el texto por el que se busca
 def filtro_select(filtro, tipo_filtro):
     # filtro solamente para efectos de un select
     select = Select(driver.find_element_by_name(filtro))
     select.select_by_visible_text(tipo_filtro)
-    find_text('Buscar').click() # clickear buscar 
-    time.sleep(2)
 
-
-# metodo para acceder a los menus del navbar de la page
-def open_navmenu(menus, menu, submenu):
-    driver.find_element_by_id(menu).click() # open menu
-    sub = driver.find_elements_by_css_selector('#%s>ul>li>a' %menus)
-    i = 0
-    try:
-        while sub[i].text.casefold() != submenu.casefold():
-            i += 1
-        sub[i].click()
-    except:
-        print('Elemento no encontrado')
-        sys.exit(0)
-    time.sleep(5)
