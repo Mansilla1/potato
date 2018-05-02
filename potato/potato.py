@@ -209,4 +209,3 @@ def filtro_select(filtro, tipo_filtro):
     # filtro solamente para efectos de un select
     select = Select(driver.find_element_by_name(filtro))
     select.select_by_visible_text(tipo_filtro)
-
